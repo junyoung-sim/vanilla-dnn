@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <vector>
 #include <random>
+#include <thread>
 #include <iostream>
 
 #include "../lib/net.hpp"
@@ -42,7 +43,7 @@ Layer *Net::layer(unsigned int index) { return &layers[index]; }
 Layer *Net::back() { return &layers.back(); }
 
 std::vector<double> Net::forward(std::vector<double> &x) {
-    std::vector<double> yhat;
+    std::vector<double> out;
     for(unsigned int l = 0; l < layers.size(); l++) {
         for(unsigned int n = 0; n < layers[l].out_features(); n++) {
             double dot = 0.00;
@@ -55,31 +56,11 @@ std::vector<double> Net::forward(std::vector<double> &x) {
             layers[l].node(n)->init();
             layers[l].node(n)->set_sum(dot);
 
-            if(l == layers.size() - 1) yhat.push_back(layers[l].node(n)->sum());
+            if(l == layers.size() - 1) out.push_back(layers[l].node(n)->sum());
             else layers[l].node(n)->set_act(relu(layers[l].node(n)->sum()));
         }
     }
-
-    return yhat;
-}
-
-void Net::model() {
-    for(unsigned int l = 0; l < layers.size(); l++) {
-        std::cout << "\n";
-        std::cout << "L" << l << ": [";
-        for(unsigned int n = 0; n < layers[l].out_features(); n++) {
-            if(n != 0) std::cout << "     ";
-            std::cout << "[";
-            for(unsigned int i = 0; i < layers[l].in_features(); i++) {
-                std::cout << layers[l].node(n)->weight(i) << " ";
-            }
-            std::cout << layers[l].node(n)->bias() << "b]";
-            if(n != layers[l].out_features() - 1) std::cout << "\n";
-        }
-        std::cout << "]\n";
-        std::cout << "(" << layers[l].in_features() << " x " << layers[l].out_features() << ")\n";
-    }
-    std::cout << "\n";
+    return out;
 }
 
 void copy(Net &src, Net &dst, double tau) {

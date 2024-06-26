@@ -89,6 +89,29 @@ void Net::train(std::vector<double> &x, std::vector<double> &y, double alpha, do
     }
 }
 
+void Net::model() {
+    const unsigned int LIMIT = 3;
+    for(unsigned int l = 0; l < layers.size(); l++) {
+        if(l == LIMIT) { std::cout << "\n...\n"; continue; }
+        if(l >= LIMIT && l < layers.size() - LIMIT) continue;
+        std::cout << "\nL" << l << "\n";
+        for(unsigned int n = 0; n < layers[l].out_features(); n++) {
+            if(n == LIMIT) { std::cout << "...\n"; continue; }
+            if(n >= LIMIT && n < layers[l].out_features() - LIMIT) continue;
+            std::cout << "[";
+            for(unsigned int i = 0; i < layers[l].in_features(); i++) {
+                if(i == LIMIT) { std::cout << "... "; continue; }
+                if(i >= LIMIT && i < layers[l].in_features() - LIMIT) continue;
+                std::cout << layers[l].node(n)->weight(i) << " ";
+            }
+            std::cout << layers[l].node(n)->bias() << "b]";
+            if(n != layers[l].out_features() - 1) std::cout << "\n";
+        }
+        std::cout << "\n(" << layers[l].in_features() << " x " << layers[l].out_features() << ")\n";
+    }
+    std::cout << "\n";
+}
+
 void copy(Net &src, Net &dst, double tau) {
     bool empty = !dst.num_of_layers();
     for(unsigned int l = 0; l < src.num_of_layers(); l++) {

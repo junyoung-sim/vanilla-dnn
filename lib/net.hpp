@@ -76,6 +76,8 @@ public:
 
     std::vector<double> forward(std::vector<double> &x);
 
+    void train(std::vector<double> &x, std::vector<double> &y, double alpha, double lambda);
+
     void model();
 };
 

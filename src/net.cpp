@@ -112,6 +112,16 @@ void Net::model() {
     std::cout << "\n";
 }
 
+void Net::zero() {
+    for(unsigned int l = 0; l < layers.size(); l++) {
+        for(unsigned int n = 0; n < layers[l].out_features(); n++) {
+            for(unsigned int i = 0; i < layers[l].in_features(); i++)
+                layers[l].node(n)->set_weight(i, 0.00);
+            layers[l].node(n)->set_bias(0.00);
+        }
+    }
+}
+
 void copy(Net &src, Net &dst, double tau) {
     bool empty = !dst.num_of_layers();
     for(unsigned int l = 0; l < src.num_of_layers(); l++) {
@@ -128,6 +138,26 @@ void copy(Net &src, Net &dst, double tau) {
             double src_bias = src.layer(l)->node(n)->bias();
             double dst_bias = dst.layer(l)->node(n)->bias();
             dst.layer(l)->node(n)->set_bias(tau * src_bias + (1.00 - tau) * dst_bias);
+        }
+    }
+}
+
+void add(Net &src, Net &dst, double tau) {
+    bool empty = !dst.num_of_layers();
+    for(unsigned int l = 0; l < src.num_of_layers(); l++) {
+        unsigned int in = src.layer(l)->in_features();
+        unsigned int out = src.layer(l)->out_features();
+        if(empty) dst.add_layer(in, out);
+
+        for(unsigned int n = 0; n < out; n++) {
+            for(unsigned int i = 0; i < in; i++) {
+                double src_weight = src.layer(l)->node(n)->weight(i);
+                double dst_weight = dst.layer(l)->node(n)->weight(i);
+                dst.layer(l)->node(n)->set_weight(i, tau * src_weight + dst_weight);
+            }
+            double src_bias = src.layer(l)->node(n)->bias();
+            double dst_bias = dst.layer(l)->node(n)->bias();
+            dst.layer(l)->node(n)->set_bias(tau * src_bias + dst_bias);
         }
     }
 }

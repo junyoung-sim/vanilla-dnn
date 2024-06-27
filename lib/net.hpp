@@ -75,12 +75,14 @@ public:
     Layer *back();
 
     std::vector<double> forward(std::vector<double> &x);
-
     void train(std::vector<double> &x, std::vector<double> &y, double alpha, double lambda);
 
     void model();
+    void zero();
 };
 
 void copy(Net &src, Net &dst, double tau);
+
+void add(Net &src, Net &dst, double tau);
 
 #endif

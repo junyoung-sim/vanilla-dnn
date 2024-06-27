@@ -90,7 +90,7 @@ void Net::train(std::vector<double> &x, std::vector<double> &y, double alpha, do
 }
 
 void Net::model() {
-    const unsigned int LIMIT = 3;
+    const unsigned int LIMIT = 2;
     for(unsigned int l = 0; l < layers.size(); l++) {
         if(l == LIMIT) { std::cout << "\n...\n"; continue; }
         if(l >= LIMIT && l < layers.size() - LIMIT) continue;

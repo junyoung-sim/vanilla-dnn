@@ -16,7 +16,7 @@
 #define EXT 100
 #define OUT 2
 
-#define ALPHA 0.0001
+#define ALPHA 0.000001
 #define LAMBDA 0.10
 
 #define ITR 10
@@ -84,6 +84,8 @@ int main(int argc, char *argv[])
         loss /= BATCH;
         std::cout << "ITR #" << itr << " LOSS=" << loss << "\n";
     }
+
+    net.model();
 
     return 0;
 }

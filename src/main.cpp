@@ -60,7 +60,8 @@ int main(int argc, char *argv[])
         std::vector<std::thread> threads;
         for(unsigned int i = 0; i < BATCH; i++) {
             copy(net, ensemble[i], 1.00);
-            threads.push_back(std::thread(&Net::train, std::ref(ensemble[i]), std::ref(x[i]), std::ref(y[i]), ALPHA, LAMBDA));
+            threads.push_back(std::thread(&Net::train, std::ref(ensemble[i]),
+                                          std::ref(x[i]), std::ref(y[i]), ALPHA, LAMBDA));
             if(itr == 0) {
                 std::thread::id thread_id = threads[i].get_id();
                 std::cout << "THREAD #" << thread_id << ": ENSEMBLE #" << i;

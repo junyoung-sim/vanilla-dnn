@@ -10,15 +10,16 @@
 
 #define MU 0
 #define SIGMA 1
+#define N 10000
 #define BATCH 10
-#define LAYERS 1000
+#define LAYERS 100
 #define EXT 100
 #define OUT 2
 #define ALPHA 0.000001
 #define LAMBDA 0.10
-#define ITR 10  
+#define ITR 100
 
-std::normal_distribution<double> gaussian(0.00, 0.10);
+std::normal_distribution<double> gaussian(0.00, 0.01);
 std::default_random_engine seed(std::chrono::system_clock::now().time_since_epoch().count());
 
 std::vector<GBMParam> param;
@@ -29,9 +30,9 @@ Net net;
 std::vector<Net> ensemble;
 
 void generate_dataset() {
-    param.resize(BATCH);
-    y.resize(BATCH, std::vector<double>(OUT));
-    for(unsigned int i = 0; i < BATCH; i++) {
+    param.resize(N);
+    y.resize(N, std::vector<double>(OUT));
+    for(unsigned int i = 0; i < N; i++) {
         double mu = gaussian(seed);
         double sigma = gaussian(seed);
         param[i] = GBMParam(1.00, mu, sigma);
@@ -68,17 +69,19 @@ int main(int argc, char *argv[])
 
     for(unsigned int itr = 0; itr < ITR; itr++) {
         std::vector<std::thread> threads;
+        std::vector<unsigned int> index(N);
+        std::iota(index.begin(), index.end(), 0);
+        std::shuffle(index.begin(), index.end(), seed);
+
         for(unsigned int i = 0; i < BATCH; i++) {
+            unsigned int k = index[i];
             copy(net, ensemble[i], 1.00);
             threads.push_back(std::thread(&Net::train, std::ref(ensemble[i]),
-                                          std::ref(x[i]), std::ref(y[i]), ALPHA, LAMBDA));
-            if(itr == 0) {
-                std::thread::id thread_id = threads[i].get_id();
-                std::cout << "THREAD #" << thread_id << ": ENSEMBLE #" << i;
-                std::cout << " (mu=" << y[i][MU] << ", sigma=" << y[i][SIGMA] << ")\n";
-            }
+                                          std::ref(x[k]), std::ref(y[k]), ALPHA, LAMBDA));
+            //std::thread::id thread_id = threads[i].get_id();
+            //std::cout << "THREAD #" << thread_id << ": ENSEMBLE #" << i;
+            //std::cout << " (mu=" << y[k][MU] << ", sigma=" << y[k][SIGMA] << ")\n";
         }
-        if(itr == 0) std::cout << "\n";
 
         net.zero();
         for(unsigned int i = 0; i < BATCH; i++) {
@@ -89,11 +92,12 @@ int main(int argc, char *argv[])
         double loss = 0.00;
         for(unsigned int i = 0; i < BATCH; i++) {
             std::vector<double> out = net.forward(x[i]);
-            for(unsigned int k = 0; k < OUT; k++)
-                loss += pow(y[i][k] - out[k], 2);
+            for(unsigned int j = 0; j < OUT; j++)
+                loss += pow(y[i][j] - out[j], 2);
         }
         loss /= BATCH;
         std::cout << "ITR #" << itr << " LOSS=" << loss << "\n";
+        //std::cout << "\n";
     }
 
     net.model();

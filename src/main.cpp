@@ -7,34 +7,47 @@
 
 #include "../lib/gbm.hpp"
 #include "../lib/net.hpp"
-#include "../lib/param.hpp"
 
-int main(int argc, char *argv[])
-{
-    std::cout << std::fixed;
-    std::cout.precision(12);
+#define MU 0
+#define SIGMA 1
+#define BATCH 10
+#define LAYERS 1000
+#define EXT 100
+#define OUT 2
+#define ALPHA 0.000001
+#define LAMBDA 0.10
+#define ITR 10  
 
-    std::normal_distribution<double> gaussian(0.00, 0.01);
-    std::default_random_engine seed(std::chrono::system_clock::now().time_since_epoch().count());
+std::normal_distribution<double> gaussian(0.00, 0.10);
+std::default_random_engine seed(std::chrono::system_clock::now().time_since_epoch().count());
 
-    std::vector<GBMParam> param(BATCH);
-    std::vector<std::vector<double>> y(BATCH, std::vector<double>(OUT));
+std::vector<GBMParam> param;
+std::vector<std::vector<double>> x;
+std::vector<std::vector<double>> y;
+
+Net net;
+std::vector<Net> ensemble;
+
+void generate_dataset() {
+    param.resize(BATCH);
+    y.resize(BATCH, std::vector<double>(OUT));
     for(unsigned int i = 0; i < BATCH; i++) {
         double mu = gaussian(seed);
         double sigma = gaussian(seed);
         param[i] = GBMParam(1.00, mu, sigma);
         y[i] = {mu, sigma};
     }
-    std::vector<std::vector<double>> x = gbm(param, EXT, seed);
+    x = gbm(param, EXT, seed);
     std::cout << "GENERATED TEST DATASET!\n\n";
+}
 
-    Net net;
+void initialize() {
     for(unsigned int l = 0; l < LAYERS; l++)
         net.add_layer(EXT, EXT);
     net.add_layer(EXT, OUT);
     net.init(seed);
 
-    std::vector<Net> ensemble(BATCH);
+    ensemble.resize(BATCH);
     for(unsigned int i = 0; i < BATCH; i++) {
         for(unsigned int l = 0; l < LAYERS; l++)
             ensemble[i].add_layer(EXT, EXT);
@@ -43,6 +56,15 @@ int main(int argc, char *argv[])
 
     std::cout << "INITIALIZED NETWORK PARAMETERS!\n";
     net.model();
+}
+
+int main(int argc, char *argv[])
+{
+    std::cout << std::fixed;
+    std::cout.precision(12);
+
+    generate_dataset();
+    initialize();
 
     for(unsigned int itr = 0; itr < ITR; itr++) {
         std::vector<std::thread> threads;
@@ -63,7 +85,7 @@ int main(int argc, char *argv[])
             threads[i].join();
             add(ensemble[i], net, 1.00 / BATCH);
         }
-
+        
         double loss = 0.00;
         for(unsigned int i = 0; i < BATCH; i++) {
             std::vector<double> out = net.forward(x[i]);

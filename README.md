@@ -7,3 +7,5 @@ For testing purposes, a neural network with over 1 million parameters was traine
 ![alt text](https://github.com/junyoung-sim/vanilla-nn/blob/main/res/fig2.png)
 
 ![alt text](https://github.com/junyoung-sim/vanilla-nn/blob/main/res/fig3.png)
+
+![alt text](https://github.com/junyoung-sim/vanilla-nn/blob/main/res/fig4.png)

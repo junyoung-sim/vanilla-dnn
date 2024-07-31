@@ -4,6 +4,7 @@
 #include <thread>
 #include <chrono>
 #include <cmath>
+#include <functional>
 
 #include "../lib/gbm.hpp"
 #include "../lib/net.hpp"
@@ -28,6 +29,8 @@ std::vector<std::vector<double>> y;
 
 Net net;
 std::vector<Net> ensemble;
+
+std::vector<std::thread> threads;
 
 void generate_dataset() {
     param.resize(N);
@@ -59,6 +62,16 @@ void initialize() {
     net.model();
 }
 
+void push(std::function<void()> f) {
+    threads.push_back(std::thread(f));
+}
+
+void join() {
+    for(std::thread &t: threads)
+        t.join();
+    threads.clear();
+}
+
 int main(int argc, char *argv[])
 {
     std::cout << std::fixed;
@@ -68,26 +81,22 @@ int main(int argc, char *argv[])
     initialize();
 
     for(unsigned int itr = 0; itr < ITR; itr++) {
-        std::vector<std::thread> threads;
         std::vector<unsigned int> index(N);
         std::iota(index.begin(), index.end(), 0);
         std::shuffle(index.begin(), index.end(), seed);
 
         for(unsigned int i = 0; i < BATCH; i++) {
             unsigned int k = index[i];
-            copy(net, ensemble[i], 1.00);
-            threads.push_back(std::thread(&Net::train, std::ref(ensemble[i]),
-                                          std::ref(x[k]), std::ref(y[k]), ALPHA, LAMBDA));
-            //std::thread::id thread_id = threads[i].get_id();
-            //std::cout << "THREAD #" << thread_id << ": ENSEMBLE #" << i;
-            //std::cout << " (mu=" << y[k][MU] << ", sigma=" << y[k][SIGMA] << ")\n";
+            push([i, k]{
+                copy(net, ensemble[i], 1.00);
+                ensemble[i].train(x[k], y[k], ALPHA, LAMBDA);
+            });
         }
+        join();
 
         net.zero();
-        for(unsigned int i = 0; i < BATCH; i++) {
-            threads[i].join();
+        for(unsigned int i = 0; i < BATCH; i++)
             add(ensemble[i], net, 1.00 / BATCH);
-        }
         
         double loss = 0.00;
         for(unsigned int i = 0; i < BATCH; i++) {
@@ -97,7 +106,6 @@ int main(int argc, char *argv[])
         }
         loss /= BATCH;
         std::cout << "ITR #" << itr << " LOSS=" << loss << "\n";
-        //std::cout << "\n";
     }
 
     net.model();

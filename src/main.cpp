@@ -11,8 +11,8 @@
 
 #define MU 0
 #define SIGMA 1
-#define N 1000
-#define VAL 100
+#define TRAIN 1000
+#define VALID 100
 #define BATCH 10
 #define LAYERS 100
 #define EXT 100
@@ -42,9 +42,9 @@ void join() {
 }
 
 void generate_dataset() {
-    param.resize(N+VAL);
-    y.resize(N+VAL, std::vector<double>(OUT));
-    for(unsigned int i = 0; i < N+VAL; i++) {
+    param.resize(TRAIN+VALID);
+    y.resize(TRAIN+VALID, std::vector<double>(OUT));
+    for(unsigned int i = 0; i < TRAIN+VALID; i++) {
         double mu = gaussian(seed);
         double sigma = gaussian(seed);
         param[i] = GBMParam(1.00, mu, sigma);
@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
     initialize();
 
     for(unsigned int itr = 0; itr < ITR; itr++) {
-        std::vector<unsigned int> index(N);
+        std::vector<unsigned int> index(TRAIN);
         std::iota(index.begin(), index.end(), 0);
         std::shuffle(index.begin(), index.end(), seed);
 
@@ -101,12 +101,12 @@ int main(int argc, char *argv[])
             add(ensemble[i], net, 1.00 / BATCH);
 
         double loss = 0.00;
-        for(unsigned int i = N; i < N+VAL; i++) {
+        for(unsigned int i = TRAIN; i < TRAIN+VALID; i++) {
             std::vector<double> out = net.forward(x[i]);
             for(unsigned int j = 0; j < OUT; j++)
                 loss += pow(y[i][j] - out[j], 2);
         }
-        loss /= VAL;
+        loss /= VALID;
         std::cout << "ITR #" << itr << " LOSS=" << loss << "\n";
     }
 

@@ -11,7 +11,7 @@
 
 #define MU 0
 #define SIGMA 1
-#define N 10000
+#define N 1000
 #define VAL 100
 #define BATCH 10
 #define LAYERS 100
@@ -32,6 +32,14 @@ Net net;
 std::vector<Net> ensemble;
 
 std::vector<std::thread> threads;
+void push(std::function<void()> f) {
+    threads.push_back(std::thread(f));
+}
+void join() {
+    for(std::thread &t: threads)
+        t.join();
+    threads.clear();
+}
 
 void generate_dataset() {
     param.resize(N+VAL);
@@ -46,7 +54,6 @@ void generate_dataset() {
 
     std::cout << "GENERATED DATASET!\n\n";
 }
-
 void initialize() {
     for(unsigned int l = 0; l < LAYERS; l++)
         net.add_layer(EXT, EXT);
@@ -55,23 +62,16 @@ void initialize() {
 
     ensemble.resize(BATCH);
     for(unsigned int i = 0; i < BATCH; i++) {
-        for(unsigned int l = 0; l < LAYERS; l++)
-            ensemble[i].add_layer(EXT, EXT);
-        ensemble[i].add_layer(EXT, OUT);
+        push([i]{
+            for(unsigned int l = 0; l < LAYERS; l++)
+                ensemble[i].add_layer(EXT, EXT);
+            ensemble[i].add_layer(EXT, OUT);
+        });
     }
+    join();
 
     std::cout << "INITIALIZED NETWORK PARAMETERS!\n";
     net.model();
-}
-
-void push(std::function<void()> f) {
-    threads.push_back(std::thread(f));
-}
-
-void join() {
-    for(std::thread &t: threads)
-        t.join();
-    threads.clear();
 }
 
 int main(int argc, char *argv[])

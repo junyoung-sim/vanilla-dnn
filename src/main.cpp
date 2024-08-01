@@ -12,6 +12,7 @@
 #define MU 0
 #define SIGMA 1
 #define N 10000
+#define VAL 100
 #define BATCH 10
 #define LAYERS 100
 #define EXT 100
@@ -33,16 +34,17 @@ std::vector<Net> ensemble;
 std::vector<std::thread> threads;
 
 void generate_dataset() {
-    param.resize(N);
-    y.resize(N, std::vector<double>(OUT));
-    for(unsigned int i = 0; i < N; i++) {
+    param.resize(N+VAL);
+    y.resize(N+VAL, std::vector<double>(OUT));
+    for(unsigned int i = 0; i < N+VAL; i++) {
         double mu = gaussian(seed);
         double sigma = gaussian(seed);
         param[i] = GBMParam(1.00, mu, sigma);
         y[i] = {mu, sigma};
     }
     x = gbm(param, EXT, seed);
-    std::cout << "GENERATED TEST DATASET!\n\n";
+
+    std::cout << "GENERATED DATASET!\n\n";
 }
 
 void initialize() {
@@ -97,14 +99,14 @@ int main(int argc, char *argv[])
         net.zero();
         for(unsigned int i = 0; i < BATCH; i++)
             add(ensemble[i], net, 1.00 / BATCH);
-        
+
         double loss = 0.00;
-        for(unsigned int i = 0; i < BATCH; i++) {
+        for(unsigned int i = N; i < N+VAL; i++) {
             std::vector<double> out = net.forward(x[i]);
             for(unsigned int j = 0; j < OUT; j++)
                 loss += pow(y[i][j] - out[j], 2);
         }
-        loss /= BATCH;
+        loss /= VAL;
         std::cout << "ITR #" << itr << " LOSS=" << loss << "\n";
     }
 
